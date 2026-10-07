@@ -1,0 +1,236 @@
+{
+  "name": "Peluquería - Recordatorios de citas",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a2dc5574-fa16-4d2e-b875-15995c7f3944",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT c.id, c.telefono, c.servicio, c.estilista, c.hora_inicio, cl.nombre\nFROM citas c\nJOIN clientes cl ON cl.telefono = c.telefono\nWHERE c.estado = 'agendada'\n  AND c.recordatorio_24h_enviado = false\n  AND c.hora_inicio > (NOW() AT TIME ZONE 'America/Bogota')\n  AND c.hora_inicio <= (NOW() AT TIME ZONE 'America/Bogota') + INTERVAL '24 hours';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        224,
+        0
+      ],
+      "id": "ebd1c851-cbfe-43c9-94ae-06a1b0493741",
+      "name": "Buscar citas para recordatorio 24h",
+      "credentials": {
+        "postgres": {
+          "id": "juUdlEaG8OebzoAX",
+          "name": "Postgres - Studio Look"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE citas SET recordatorio_24h_enviado = true WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ $('Buscar citas para recordatorio 24h').item.json.id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        656,
+        0
+      ],
+      "id": "b274a9fc-9191-4614-a9fd-10b450446a77",
+      "name": "Marcar recordatorio 24h enviado",
+      "credentials": {
+        "postgres": {
+          "id": "juUdlEaG8OebzoAX",
+          "name": "Postgres - Studio Look"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT c.id, c.telefono, c.servicio, c.estilista, c.hora_inicio, cl.nombre\nFROM citas c\nJOIN clientes cl ON cl.telefono = c.telefono\nWHERE c.estado = 'agendada'\n  AND c.recordatorio_2h_enviado = false\n  AND c.hora_inicio > (NOW() AT TIME ZONE 'America/Bogota')\n  AND c.hora_inicio <= (NOW() AT TIME ZONE 'America/Bogota') + INTERVAL '2 hours';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        288,
+        208
+      ],
+      "id": "f360565c-ead8-4d56-a60a-8e5390ac23fc",
+      "name": "Buscar citas para recordatorio 2h",
+      "credentials": {
+        "postgres": {
+          "id": "juUdlEaG8OebzoAX",
+          "name": "Postgres - Studio Look"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1243996715473650",
+        "recipientPhoneNumber": "={{ $json.telefono }}",
+        "textBody": "=Hola {{ $json.nombre }}! Tu cita en Studio Look es hoy a las {{ new Date($json.hora_inicio).toLocaleString('es-CO', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/Bogota' }) }} ({{ $json.servicio }} con {{ $json.estilista }}). ¡Te esperamos! 💇",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        512,
+        208
+      ],
+      "id": "b1dbb76a-2bf6-4c52-8b03-e431637422dc",
+      "name": "Enviar recordatorio 2h",
+      "webhookId": "2268b68a-7a59-490f-b353-e42f60558086",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "0i9zgOtFB8bAZ3Sa",
+          "name": "+1 (555) 633-8241"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1243996715473650",
+        "recipientPhoneNumber": "={{ $json.telefono }}",
+        "textBody": "=Hola {{ $json.nombre }}! Te recordamos tu cita mañana en Studio Look: {{ $json.servicio }} con {{ $json.estilista }} a las {{ new Date($json.hora_inicio).toLocaleString('es-CO', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/Bogota' }) }}. Si necesitas cancelar o cambiar la hora, solo respóndenos este mensaje 🙂",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        432,
+        0
+      ],
+      "id": "82bc54f3-acef-47ef-b09d-d0581e9b8563",
+      "name": "Enviar recordatorio 24h",
+      "webhookId": "f35ced30-96c5-4152-8360-2538b4bca433",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "0i9zgOtFB8bAZ3Sa",
+          "name": "+1 (555) 633-8241"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE citas SET recordatorio_2h_enviado = true WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ $('Buscar citas para recordatorio 2h').item.json.id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        736,
+        208
+      ],
+      "id": "e176ecff-f0ef-45a8-919b-ae3601e7e033",
+      "name": "Marcar recordatorio 2h enviado",
+      "credentials": {
+        "postgres": {
+          "id": "juUdlEaG8OebzoAX",
+          "name": "Postgres - Studio Look"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Buscar citas para recordatorio 24h",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Buscar citas para recordatorio 2h",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar citas para recordatorio 24h": {
+      "main": [
+        [
+          {
+            "node": "Enviar recordatorio 24h",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar citas para recordatorio 2h": {
+      "main": [
+        [
+          {
+            "node": "Enviar recordatorio 2h",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar recordatorio 24h": {
+      "main": [
+        [
+          {
+            "node": "Marcar recordatorio 24h enviado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar recordatorio 2h": {
+      "main": [
+        [
+          {
+            "node": "Marcar recordatorio 2h enviado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "914ae0d9-275a-464c-8e6f-88c5f6782dc7",
+  "meta": {
+    "instanceId": "5a7411fdaadd85802693743b384ca6a40ed9d0becc15280ae6a2f669260909a9"
+  },
+  "nodeGroups": [],
+  "id": "kLrvPZLYJxjR0KAk",
+  "tags": []
+}

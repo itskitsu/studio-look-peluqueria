@@ -1,0 +1,871 @@
+{
+  "name": "Portafolio - Agente Peluquería",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3fc5eda7-a135-4127-8d85-bda96983b8b0",
+              "leftValue": "={{ $json.query['hub.mode'] }}",
+              "rightValue": "subscribe",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -112,
+        -64
+      ],
+      "id": "fdc84ff9-c1ff-452b-8814-4983de4a2d91",
+      "name": "Verificar webhook (Meta)"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        240,
+        -192
+      ],
+      "id": "ae79f32d-d17d-438d-be34-38bbbaf7c0c1",
+      "name": "Confirmar verificación a Meta"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"status\": \"ok\"}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -176,
+        128
+      ],
+      "id": "5f755667-ec47-4b85-a835-0b017db452d2",
+      "name": "Confirmar recepción a Meta"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ed47e25a-be58-42b3-8fa2-85640975ef37",
+              "leftValue": "={{ $json.body.entry[0].changes[0].value.messages?.[0]?.text?.body }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        32,
+        176
+      ],
+      "id": "b8b89d71-7f57-4f2d-a1e3-d68276c8afb3",
+      "name": "Descartar notificaciones (solo texto real)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "97f83ce5-fecb-46a6-a594-3bcd5ac1b8c7",
+              "name": "telefono",
+              "value": "={{ $json.body.entry[0].changes[0].value.messages[0].from }}",
+              "type": "string"
+            },
+            {
+              "id": "7e788046-ae4f-42b7-b539-2b99d7921b62",
+              "name": "=nombre",
+              "value": "={{ $json.body.entry[0].changes[0].value.contacts[0].profile.name }}",
+              "type": "string"
+            },
+            {
+              "id": "032a1cc0-783a-4249-a789-2289574e8a33",
+              "name": "mensaje_texto",
+              "value": "={{ $json.body.entry[0].changes[0].value.messages[0].text.body }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        240,
+        256
+      ],
+      "id": "7331ab25-7977-4e15-87ee-14bf611d4244",
+      "name": "Extraer datos del mensaje"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.mensaje_texto }}",
+        "options": {
+          "systemMessage": "=Eres el asistente virtual de Studio Look, una peluquería y salón de belleza unisex en Ibagué. Atiendes a los clientes por WhatsApp de forma amable, cercana y profesional.\n\nHoy es {{ $now.format('yyyy-MM-dd') }}, un {{ $now.format('cccc') }}. Usa siempre esta fecha como referencia para calcular \"mañana\", \"el lunes\", \"este sábado\", etc. Nunca asumas el año por tu cuenta.\n\nINFORMACIÓN DEL NEGOCIO:\n- Nombre: Studio Look\n- Dirección: Carrera 5 #20-45, Ibagué\n- Horario: Lunes a sábado, 9:00am a 7:00pm. Domingos y festivos cerrado.\n- Equipo de estilistas: Valentina, Camilo, Andrea, Kevin\n\nSERVICIOS Y PRECIOS:\n- Corte de cabello (dama/caballero): $25.000 (aprox. 40 min)\n- Corte + Barba: $35.000 (aprox. 60 min)\n- Tinte / Color: $80.000 (aprox. 120 min)\n- Manicure: $20.000 (aprox. 40 min)\n- Pedicure: $25.000 (aprox. 45 min)\n- Tratamiento capilar (hidratación/keratina): $70.000 (aprox. 90 min)\nTodos los servicios de cabello incluyen lavado.\n\nPara cualquier información adicional sobre el negocio (promociones, productos, preguntas específicas), usa la herramienta de consulta del negocio (RAG) antes de responder — nunca inventes información que no esté confirmada ahí o en este mensaje.\n\nFLUJO DE AGENDAMIENTO:\n1. Cuando un cliente quiera agendar una cita, pregunta qué servicio desea, y si no especifica estilista, puede ser con cualquiera disponible.\n2. Usa la herramienta de consultar disponibilidad para verificar horarios libres antes de confirmar.\n3. Antes de registrar la cita, verifica si el cliente ya existe con la herramienta de consultar fidelidad (por su número de teléfono). Si no existe, regístralo con la herramienta correspondiente (puedes pedir nombre; cédula y fecha de nacimiento son opcionales).\n4. Si el cliente tiene el servicio gratis disponible (cada 6 visitas), ofrécele usarlo en esta cita.\n5. Registra la cita en Google Calendar y en la base de datos con la herramienta correspondiente.\n6. Confirma al cliente la cita con fecha, hora, servicio, estilista y precio (o indicando que es su servicio gratis).\n\nCANCELACIONES Y CONSULTAS DE CITA:\n- Si el cliente quiere cancelar o pregunta si tiene una cita agendada, usa la herramienta de buscar cita del cliente.\n- Si no encuentra ninguna cita activa, dile amablemente que no tiene citas agendadas y ofrece ayudarle a agendar una. No asumas que es un error.\n- Para cancelar, usa la herramienta de marcar cita cancelada, tanto en la base de datos como eliminando el evento correspondiente en Google Calendar.\n\nESCALAMIENTO:\nSi el cliente pide hablar con una persona, tiene una queja, o preguntas que no puedas resolver con la información disponible, usa la herramienta de escalar a una persona para notificar al equipo, y avísale al cliente que en breve alguien del equipo se pondrá en contacto.\n\nTONO:\nSé cálido, claro y breve en tus respuestas (estilo WhatsApp, sin párrafos largos). Usa el nombre del cliente cuando lo sepas. No uses lenguaje robótico ni repitas literalmente los datos que el cliente ya te dio."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        448,
+        256
+      ],
+      "id": "9acd473c-56ac-4c1b-8c2a-66a386512caf",
+      "name": "Agente Mostacho (cerebro)"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-haiku-4-5-20251001",
+          "mode": "list",
+          "cachedResultName": "Claude Haiku 4.5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        64,
+        400
+      ],
+      "id": "39ae6952-9d6f-47da-8556-719927d37008",
+      "name": "Modelo Claude Sonnet 5",
+      "credentials": {
+        "anthropicApi": {
+          "id": "NFGh70L2TQNgbDSi",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Extraer datos del mensaje').item.json.telefono }}-v1"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        208,
+        736
+      ],
+      "id": "02995850-55fa-4a5f-b700-c61bea152d90",
+      "name": "Memoria por cliente (teléfono)"
+    },
+    {
+      "parameters": {
+        "description": "=Consulta la disponibilidad de Studio Look para una cita. Parámetros: fecha_consulta (aaaa-mm-dd), hora_inicio (hh:mm en formato de 24 horas, por ejemplo 16:00), duracion_min (40 para Corte de cabello, 60 para Corte + Barba, 120 para Tinte/Color, 40 para Manicure, 45 para Pedicure, 90 para Tratamiento capilar) y barbero_preferido (nombre del estilista si el cliente lo pidió; texto vacío si no eligió). Devuelve disponible (true o false), barbero_asignado y, si no hay cupo, motivo y alternativas (horas libres cercanas).",
+        "workflowId": {
+          "__rl": true,
+          "value": "IYQQ5U7hljenOKQJ",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/IYQQ5U7hljenOKQJ",
+          "cachedResultName": "peluquería - Consultar Disponibilidad"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "fecha_consulta": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('fecha_consulta', ``, 'string') }}",
+            "hora_inicio": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('hora_inicio', ``, 'string') }}",
+            "duracion_min": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('duracion_min', ``, 'number') }}",
+            "barbero_preferido": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('barbero_preferido', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "fecha_consulta",
+              "displayName": "fecha_consulta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "hora_inicio",
+              "displayName": "hora_inicio",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "duracion_min",
+              "displayName": "duracion_min",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "barbero_preferido",
+              "displayName": "barbero_preferido",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        64,
+        640
+      ],
+      "id": "860301be-9e01-4d77-8940-5e9ae31f081a",
+      "name": "Herramienta: Consultar disponibilidad"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Usa esta herramienta para agendar una cita nueva en el calendario, una vez el cliente confirme fecha y hora.",
+        "calendar": {
+          "__rl": true,
+          "value": "terangi8n8@gmail.com",
+          "mode": "list",
+          "cachedResultName": "terangi8n8@gmail.com"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "additionalFields": {
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        336,
+        656
+      ],
+      "id": "ae2ab03a-fdcf-4d95-93f6-11921a215353",
+      "name": "Herramienta: Crear cita en Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "B6KEpcWb8EDc3BSI",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Avisar al equipo",
+        "operation": "send",
+        "phoneNumberId": "= 1243996715473650",
+        "recipientPhoneNumber": "=573133383968",
+        "textBody": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Text_Body', ``, 'string') }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsAppTool",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        448
+      ],
+      "id": "f9200ebd-6a7f-4100-88f7-b9c0fc4fed76",
+      "name": "Herramienta: Escalar a una persona",
+      "webhookId": "d75db5a7-799f-4698-9a6a-574ac74a40f4",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "0i9zgOtFB8bAZ3Sa",
+          "name": "+1 (555) 633-8241"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        928,
+        544
+      ],
+      "id": "b6c2fcc8-969c-4ae5-a309-f36f45f6133a",
+      "name": "Embeddings para RAG",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "aU8Jcjdc1dmo8ckr",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "Studio Look es una peluquería y salón de belleza unisex ubicada en Carrera 5 #20-45, Ibagué.\n\nHorario de atención: lunes a sábado de 9:00am a 7:00pm. Domingos y festivos permanecemos cerrados.\n\nNuestro equipo de estilistas: Valentina, Camilo, Andrea y Kevin.\n\nServicios y precios:\n- Corte de cabello (dama o caballero): $25.000, duración aproximada 40 minutos.\n- Corte + Barba: $35.000, duración aproximada 60 minutos.\n- Tinte / Color: $80.000, duración aproximada 120 minutos.\n- Manicure: $20.000, duración aproximada 40 minutos.\n- Pedicure: $25.000, duración aproximada 45 minutos.\n- Tratamiento capilar (hidratación o keratina): $70.000, duración aproximada 90 minutos.\n\nTodos los servicios de cabello incluyen lavado.\n\nPrograma de fidelidad: después de 6 visitas completadas, el cliente recibe un servicio gratis (aplica para el servicio de menor valor entre corte y manicure).\n\nFormas de pago aceptadas: efectivo, tarjeta débito/crédito y transferencia Nequi/Daviplata.\n\nPara cancelar o reprogramar una cita, el cliente puede escribir directamente por este mismo WhatsApp con al menos 2 horas de anticipación.",
+        "textSplittingMode": "custom",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        1056,
+        464
+      ],
+      "id": "acaa3b85-3a7e-4c36-a04c-cd7c981498bf",
+      "name": "Cargar documento del negocio (setup)"
+    },
+    {
+      "parameters": {
+        "chunkSize": 500,
+        "chunkOverlap": 50,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        640
+      ],
+      "id": "5af0268d-4d90-4f9c-a157-bcac5bf1a39d",
+      "name": "Dividir documento en fragmentos (setup)"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Elimina del calendario la cita que el cliente confirmó cancelar. Necesita el event_id exacto devuelto por 'Buscar cita del cliente'.",
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "terangi8n8@gmail.com",
+          "mode": "list",
+          "cachedResultName": "terangi8n8@gmail.com"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        336,
+        816
+      ],
+      "id": "6d05e79d-b1e3-400c-937f-ca7a683bf722",
+      "name": "Delete an event in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "B6KEpcWb8EDc3BSI",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": "mostacho_documentos",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        976,
+        240
+      ],
+      "id": "e0530f2b-ec2c-41ec-b3a7-db66c48ec223",
+      "name": "Postgres PGVector Store",
+      "credentials": {
+        "postgres": {
+          "id": "juUdlEaG8OebzoAX",
+          "name": "Postgres - Studio Look"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Usa esta herramienta para responder preguntas sobre los servicios, precios, horario, ubicación o el equipo de barberos de Mostacho Barbería.",
+        "tableName": "mostacho_documentos",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        704,
+        384
+      ],
+      "id": "e88db775-f537-4ccd-a133-2b7cb4d35020",
+      "name": "Postgres PGVector Store1",
+      "credentials": {
+        "postgres": {
+          "id": "juUdlEaG8OebzoAX",
+          "name": "Postgres - Studio Look"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Usa esta herramienta al inicio de la conversación con un cliente para registrarlo en la base de datos con su número de teléfono y nombre. No falla si el cliente ya existe.",
+        "operation": "executeQuery",
+        "query": "  INSERT INTO clientes (telefono, nombre)\n  VALUES ($1, $2)\n  ON CONFLICT (telefono) DO NOTHING\n  RETURNING *;",
+        "options": {
+          "queryReplacement": "={{ $('Extraer datos del mensaje').item.json.telefono }}, {{ $fromAI('nombre', 'el nombre del cliente') }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.7,
+      "position": [
+        768,
+        576
+      ],
+      "id": "2179d0dd-5ad1-43f7-8b60-9eae74c663f5",
+      "name": "Herramienta: Registrar cliente",
+      "credentials": {
+        "postgres": {
+          "id": "juUdlEaG8OebzoAX",
+          "name": "Postgres - Studio Look"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Usa esta herramienta para consultar cuántas visitas lleva el cliente, si tiene un servicio gratis disponible, o si es miembro premium. Úsala cuando el cliente pregunte por su fidelidad/puntos, o antes de confirmar una cita nueva para ofrecerle el servicio gratis si aplica.",
+        "operation": "executeQuery",
+        "query": "  SELECT nombre, contador_visitas, servicio_gratis_disponible, membresia_premium\n  FROM clientes\n  WHERE telefono = $1;",
+        "options": {
+          "queryReplacement": "={{ $('Extraer datos del mensaje').item.json.telefono }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.7,
+      "position": [
+        528,
+        464
+      ],
+      "id": "d9b0b565-ecdc-44b6-ba32-377e8bfaf35e",
+      "name": "Herramienta: Consultar fidelidad del cliente",
+      "credentials": {
+        "postgres": {
+          "id": "juUdlEaG8OebzoAX",
+          "name": "Postgres - Studio Look"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Usa esta herramienta justo después de crear una cita en el calendario, para registrarla en la base de datos. Necesitas teléfono, servicio, estilista, fecha/hora de inicio y fin, si es gratis, y el ID del evento de Calendar que acabas de crear.",
+        "operation": "executeQuery",
+        "query": "INSERT INTO citas (telefono, servicio, estilista, hora_inicio, hora_fin, es_gratis, calendar_event_id)\nVALUES ($1, $2, $3, $4, $5, $6, $7)\nRETURNING *;;",
+        "options": {
+          "queryReplacement": "={{ $('Extraer datos del mensaje').item.json.telefono }}, {{ $fromAI('servicio') }}, {{ $fromAI('barbero') }}, {{ $fromAI('fecha_hora_inicio') }}, {{ $fromAI('fecha_hora_fin') }}, {{ $fromAI('es_gratis', 'true si el cliente esta usando su servicio gratis de fidelidad, false en caso contrario', 'boolean') }}, {{ $fromAI('calendar_event_id', 'el ID del evento creado en Google Calendar') }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.7,
+      "position": [
+        704,
+        784
+      ],
+      "id": "09410ade-4785-41f5-8e09-16efbbe21048",
+      "name": "Herramienta: Registrar cita en BD",
+      "credentials": {
+        "postgres": {
+          "id": "juUdlEaG8OebzoAX",
+          "name": "Postgres - Studio Look"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Usa esta herramienta para buscar las citas activas (agendadas) de un cliente por su teléfono, cuando quiera cancelar, reprogramar, o pregunte si tiene una cita agendada.",
+        "operation": "executeQuery",
+        "query": "  SELECT id, servicio, barbero, fecha_hora_inicio, fecha_hora_fin, estado, calendar_event_id\n  FROM citas\n  WHERE telefono = $1\n    AND estado = 'agendada'\n  ORDER BY fecha_hora_inicio;",
+        "options": {
+          "queryReplacement": "={{ $('Extraer datos del mensaje').item.json.telefono }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.7,
+      "position": [
+        528,
+        656
+      ],
+      "id": "b132dc7a-1434-4c2a-8170-895892868144",
+      "name": "Herramienta: Buscar cita del cliente (BD)",
+      "credentials": {
+        "postgres": {
+          "id": "juUdlEaG8OebzoAX",
+          "name": "Postgres - Studio Look"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Usa esta herramienta justo después de cancelar el evento en Google Calendar, para marcar la cita como cancelada en la base de datos. Necesitas el mismo calendar_event_id que usaste para cancelar en Calendar.",
+        "operation": "executeQuery",
+        "query": "  UPDATE citas\n  SET estado = 'cancelada'\n  WHERE calendar_event_id = $1\n  RETURNING *;",
+        "options": {
+          "queryReplacement": "={{ $fromAI('calendar_event_id') }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.7,
+      "position": [
+        528,
+        848
+      ],
+      "id": "31db7545-02c4-4cdd-a92a-814ba3bc689d",
+      "name": "Herramienta: Marcar cita cancelada en BD",
+      "credentials": {
+        "postgres": {
+          "id": "juUdlEaG8OebzoAX",
+          "name": "Postgres - Studio Look"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1391858934002196",
+        "recipientPhoneNumber": "={{ $('Extraer datos del mensaje').item.json.telefono }}",
+        "textBody": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        736,
+        112
+      ],
+      "id": "3fe8b46a-e825-4505-b978-270fc6ed7444",
+      "name": "+1 (555) 633-8241",
+      "webhookId": "da4174a7-6ebc-4467-921e-9fa79c57c891",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "0i9zgOtFB8bAZ3Sa",
+          "name": "+1 (555) 633-8241"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "multipleMethods": true,
+        "path": "peluqueria",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -384,
+        32
+      ],
+      "id": "ae70f531-71fe-48a5-bcbc-6b22920630a0",
+      "name": "Entrada Whatsapp1",
+      "webhookId": "7a32f527-1f82-4b7d-ae42-aaa04d2d8899"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Verificar webhook (Meta)": {
+      "main": [
+        [
+          {
+            "node": "Confirmar verificación a Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirmar recepción a Meta": {
+      "main": [
+        [
+          {
+            "node": "Descartar notificaciones (solo texto real)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente Mostacho (cerebro)": {
+      "main": [
+        [
+          {
+            "node": "+1 (555) 633-8241",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memoria por cliente (teléfono)": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agente Mostacho (cerebro)",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Herramienta: Consultar disponibilidad": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Mostacho (cerebro)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Herramienta: Crear cita en Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Mostacho (cerebro)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Herramienta: Escalar a una persona": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Mostacho (cerebro)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings para RAG": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Postgres PGVector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dividir documento en fragmentos (setup)": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Cargar documento del negocio (setup)",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Mostacho (cerebro)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Descartar notificaciones (solo texto real)": {
+      "main": [
+        [
+          {
+            "node": "Extraer datos del mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modelo Claude Sonnet 5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente Mostacho (cerebro)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer datos del mensaje": {
+      "main": [
+        [
+          {
+            "node": "Agente Mostacho (cerebro)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cargar documento del negocio (setup)": {
+      "ai_document": [
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres PGVector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Mostacho (cerebro)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Herramienta: Registrar cliente": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Mostacho (cerebro)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Herramienta: Consultar fidelidad del cliente": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Mostacho (cerebro)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Herramienta: Registrar cita en BD": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Mostacho (cerebro)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Herramienta: Buscar cita del cliente (BD)": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Mostacho (cerebro)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Herramienta: Marcar cita cancelada en BD": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Mostacho (cerebro)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Entrada Whatsapp1": {
+      "main": [
+        [
+          {
+            "node": "Verificar webhook (Meta)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Confirmar recepción a Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "af585f96-1204-4825-84f4-7488b58a1f11",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5a7411fdaadd85802693743b384ca6a40ed9d0becc15280ae6a2f669260909a9"
+  },
+  "nodeGroups": [],
+  "id": "LX9R0ElKJxd0qWiQ",
+  "tags": []
+}
